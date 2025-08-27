@@ -8,6 +8,7 @@ from user import User
 from utils import process_segments, extract_argument, get_token
 from data import GDNData
 from const import REPORT_FR_TO_EN, ALL_MODELS
+import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--port", type=int, default=3002)
@@ -18,6 +19,7 @@ all_llms = {model: GroqLLM(model) for model in ALL_MODELS}
 print("loading data...")
 all_data = GDNData()
 
+os.makedirs("logs/", exist_ok=True)
 dictConfig({
     "version": 1,
     "disable_existing_loggers": False,
