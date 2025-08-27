@@ -24,6 +24,8 @@
 .DS_Store
 *.pem
 *.jsonl
+*.pkl
+$.log
 ./server/annotators/*
 ./server/logs
 *.lock
