@@ -4,20 +4,10 @@ This Flask server provides endpoints for processing text segments using a Llama 
 
 ## Setup
 
-1. Install the required dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-2. You'll need access to the Llama 2 model. Make sure you have the necessary permissions and authentication set up.
-
-3. Create a `data.jsonl` file in the root directory with your input data. Each line should be a valid JSON object.
-
-## Running the Server
 
 Start the server with:
 ```bash
-python app.py
+uv run app.py --port 3002
 ```
 
 The server will run on `localhost:3002`.
