@@ -25,7 +25,7 @@
 *.pem
 *.jsonl
 *.pkl
-$.log
+*.log
 ./server/annotators/*
 ./server/logs
 *.lock
