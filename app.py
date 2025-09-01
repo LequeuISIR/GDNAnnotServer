@@ -66,7 +66,7 @@ CORS(
     resources={
         r"/*": {
             "origins": [
-                "http://localhost:3001",
+                "http://localhost:3000",
                 "https://gdnannotation.isir.upmc.fr:3000"
             ]
         }
@@ -195,7 +195,7 @@ def process_opinion():
     token = get_token(request)
     user: User = User.load_user(token)
 
-    opinion_id = int(data.get("opinionId"))
+    opinion_id = data.get("opinionId")
     text = data.get('full_text')
     theme = data.get('authorName')
     segments = data.get('segments', [])
@@ -203,8 +203,11 @@ def process_opinion():
     if not segments or not text:
         app.logger.warning(f"User {token} sent invalid opinion response: missing text or segments")
         return jsonify({'error': 'Missing opinionId or segments'}), 400
-
-    used_models = all_data.get_used_llm(opinion_id)
+    
+    if "Example" in opinion_id:
+        used_models = []
+    else :
+        used_models = all_data.get_used_llm(int(opinion_id))
     random_llm = random.choice([model for model in ALL_MODELS if model not in used_models])
     app.logger.info(f"User {token} processing opinion {opinion_id} with model={random_llm}")
 
@@ -219,7 +222,8 @@ def process_opinion():
             'LLMtext': argument,
             'text': argument
         })
-
+    
+    
     user.save_last_llm(random_llm)
     return jsonify({'results': results})
 
@@ -251,7 +255,7 @@ def save_summaries():
 
     data["llm"] = used_llm
 
-    if data["opinion"]["opinionId"] == "introductionExample":
+    if "Example" in data["opinion"]["opinionId"] :
         app.logger.info("Skipping introductionExample summary save")
         return jsonify({'message': 'Summaries saved successfully'})
 
