@@ -60,14 +60,29 @@ dictConfig({
 
 
 app = Flask(__name__)
-CORS(app,
-     supports_credentials=True,
-     resources={r"/*": {"origins": "http://localhost:3001"}},
-     allow_headers=["Content-Type", "Authorization"])
+CORS(
+    app,
+    supports_credentials=True,
+    resources={
+        r"/*": {
+            "origins": [
+                "http://localhost:3001",
+                "https://gdnannotation.isir.upmc.fr:3000"
+            ]
+        }
+    },
+    allow_headers=["Content-Type", "Authorization"],
+    # expose_headers=["Access-Control-Allow-Private-Network"]
+    )
+
+#def add_pna_header(response):
+#    response.headers["Access-Control-Allow-Private-Network"] = "true"
+#    return response
 
 # --- Logging Middleware ---
 @app.before_request
 def log_request():
+    print("received request")
     token = None
     try:
         token = get_token(request)
@@ -97,9 +112,11 @@ def log_exception(e):
 @app.before_request
 def handle_preflight():
     if request.method == "OPTIONS":
+        print("received option")
         res = Response()
         res.headers['X-Content-Type-Options'] = '*'
-        res.headers.add('Access-Control-Allow-Origin', 'http://localhost:3001')
+        # res.headers.add('Access-Control-Allow-Origin', 'http://gdnannotation.isir.upmc.fr:3000')
+        res.headers.app('Access-Control-Allow-Private-Network', 'true')
         res.headers.add('Access-Control-Allow-Credentials', 'true')
         res.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
         return res
@@ -112,7 +129,6 @@ def index():
 
 ### GET NEW DATA FOR USER
 @app.route('/next-data', methods=['GET'])
-@cross_origin(origins="http://localhost:3001", allow_headers=["Content-Type", "Authorization"])
 def get_next():
     token = get_token(request)
     user: User = User.load_user(token)
@@ -264,6 +280,6 @@ def check_token():
 
 if __name__ == '__main__':
     from waitress import serve
-    serve(app, host='0.0.0.0', port=args.port)
+    serve(app, host='127.0.0.1', port=args.port)
 
-    # app.run(host='0.0.0.0', port=3002, debug=True)
+    #app.run(host='127.0.0.1', port=3002, debug=True)
