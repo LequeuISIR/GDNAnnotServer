@@ -204,7 +204,7 @@ def process_opinion():
         app.logger.warning(f"User {token} sent invalid opinion response: missing text or segments")
         return jsonify({'error': 'Missing opinionId or segments'}), 400
     
-    if "Example" in opinion_id:
+    if "Example" in str(opinion_id):
         used_models = []
     else :
         used_models = all_data.get_used_llm(int(opinion_id))
