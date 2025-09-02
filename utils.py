@@ -53,6 +53,9 @@ def process_segments(segments) :
     return segments_per_colors
 
 def get_token(request) :
-    token = request.headers.get("Authorization")
-    token = token.split(" ")[-1]
-    return token
+    try : 
+        token = request.headers.get("Authorization")
+        token = token.split(" ")[-1]
+        return token
+    except :
+        return None

@@ -131,6 +131,9 @@ def index():
 @app.route('/next-data', methods=['GET'])
 def get_next():
     token = get_token(request)
+    if token is None: 
+        return jsonify({'error': 'No token found.'}), 400
+    
     user: User = User.load_user(token)
     app.logger.info(f"Fetching next data for user {token}, current={user.current_annotation}")
 
@@ -151,6 +154,9 @@ def get_next():
 @app.route('/data-from-id', methods=['POST'])
 def get_data_from_id():
     token = get_token(request)
+    if token is None: 
+        return jsonify({'error': 'No token found.'}), 400
+
     user: User = User.load_user(token)
     data = request.json
 
@@ -170,6 +176,9 @@ def get_data_from_id():
 def report():
     data = request.json
     token = get_token(request)
+    if token is None: 
+        return jsonify({'error': 'No token found.'}), 400
+    
     user: User = User.load_user(token)
 
     opinion = data.get("opinion")
@@ -193,7 +202,9 @@ def process_opinion():
     data = request.json
     latest_data_point = data
     token = get_token(request)
-    user: User = User.load_user(token)
+
+    if token is not None: 
+        user: User = User.load_user(token)
 
     opinion_id = data.get("opinionId")
     text = data.get('full_text')
@@ -213,6 +224,7 @@ def process_opinion():
 
     color_grouped_segments = process_segments(segments)
     results = []
+
     for color, segs in color_grouped_segments.items():
         app.logger.debug(f"Processing color {color} with {len(segs)} segments")
         argument = extract_argument(text, segs, theme, all_llms[random_llm])
@@ -223,14 +235,18 @@ def process_opinion():
             'text': argument
         })
     
-    
-    user.save_last_llm(random_llm)
+    if token is not None:  
+        user.save_last_llm(random_llm)
     return jsonify({'results': results})
 
 @app.route('/user-info', methods=["GET"])
 def get_user_info():
     token = get_token(request)
+    if token is None: 
+        return jsonify({'error': 'No token found.'}), 400
+    
     user: User = User.load_user(token)
+
     done_annotations = {
         annotation_id: all_data.get_data_from_id(annotation_id)["text"]
         for annotation_id in user.done_annotations
@@ -250,14 +266,19 @@ def get_user_info():
 def save_summaries():
     data = request.json
     token = get_token(request)
+
+    if "Example" in data["opinion"]["opinionId"] :
+        app.logger.info("Skipping introductionExample summary save")
+        return jsonify({'message': 'Summaries saved successfully'})
+    
+    if token is None: 
+        return jsonify({'error': 'No token found.'}), 400
+    
     user: User = User.load_user(token)
     used_llm = user.last_used_llm
 
     data["llm"] = used_llm
 
-    if "Example" in data["opinion"]["opinionId"] :
-        app.logger.info("Skipping introductionExample summary save")
-        return jsonify({'message': 'Summaries saved successfully'})
 
     all_data.add_finished_annotation(data)
     user.save_annotation(data)
