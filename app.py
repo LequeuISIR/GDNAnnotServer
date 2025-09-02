@@ -267,7 +267,7 @@ def save_summaries():
     data = request.json
     token = get_token(request)
 
-    if "Example" in data["opinion"]["opinionId"] :
+    if "Example" in str(data["opinion"]["opinionId"]) :
         app.logger.info("Skipping introductionExample summary save")
         return jsonify({'message': 'Summaries saved successfully'})
     
@@ -294,7 +294,7 @@ def check_token():
     token = data.get("token")
 
     app.logger.info(f"User connecting with token={token}")
-
+    
     if User.token_already_exist(token):
         user = User.load_user(token)
     else:
