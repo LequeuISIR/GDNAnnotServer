@@ -1,6 +1,7 @@
 from pathlib import Path
 
-DATA_FILE = Path("/home/lequeu/data/granddebat_filtered.jsonl")
+# DATA_FILE = Path("/home/lequeu/data/granddebat_filtered.jsonl")
+DATA_FILE = Path("/data/lequeu/granddebat/granddebat_filtered.jsonl")
 
 ANNOTATORS_DIR = Path("./annotators/")
 ALL_ANNOTATIONS_OUTPUT_FILE = Path("./annotators/all_annotations.jsonl")

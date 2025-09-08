@@ -1,6 +1,7 @@
 import json
 import datetime
 from collections import defaultdict
+from const import ALL_ANNOTATIONS_OUTPUT_FILE
 
 def get_new_batch() :
     NotImplemented
@@ -59,3 +60,21 @@ def get_token(request) :
         return token
     except :
         return None
+
+
+def load_admin_opinion_results(path: str = ALL_ANNOTATIONS_OUTPUT_FILE):
+    results = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            if line.strip():  # avoid empty lines
+                results.append(json.loads(line))
+    return results
+
+def token_is_admin(token):
+    with open("./annotators/admin_tokens.txt") as f:
+        admin_tokens = [line.rstrip() for line in f]
+    
+    if token in admin_tokens :
+        return True
+
+    return False

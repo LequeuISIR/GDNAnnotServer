@@ -5,7 +5,7 @@ import argparse
 import random
 from groqLLM import GroqLLM
 from user import User
-from utils import process_segments, extract_argument, get_token
+from utils import process_segments, extract_argument, get_token, load_admin_opinion_results, token_is_admin
 from data import GDNData
 from const import REPORT_FR_TO_EN, ALL_MODELS
 import os
@@ -302,6 +302,44 @@ def check_token():
         user.save_user()
 
     return jsonify({'message': 'user successfully connected'})
+
+
+
+@app.route('/get-all-annotations', methods=['POST'])
+def check_admin_token():
+    data = request.json
+    with open("./annotators/admin_tokens.txt") as f:
+        tokens = [line.rstrip() for line in f]
+
+    token = data.get("token")
+
+    app.logger.info(f"User with token={token} wants to connect to admin.")
+    
+    if token in tokens :
+        return jsonify({'message': 'admin successfully validated'})
+
+    return jsonify({'error': f'User token={token} is not admin.'}), 400
+
+
+
+
+
+@app.route("/get-all-annotations", methods=["GET"])
+def get_all_annotations():
+    token = get_token(request)
+
+    if token is None: 
+        return jsonify({'error': 'No token found.'}), 400
+    if not token_is_admin(token):
+        return jsonify({'error': 'Token is not admin.'}), 400
+
+    try:
+        data = load_admin_opinion_results()
+        return jsonify(data)
+    except FileNotFoundError:
+        return jsonify({"error": f"All annotations files not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     from waitress import serve
