@@ -4,6 +4,7 @@ This Flask server provides endpoints for processing text segments using a Llama 
 
 ## Setup
 
+You need to setup Your `GROQ_API_KEY`, `OPENAI_API_KEY` and `ANNOTATION_DATA_FILE` environment variables.
 
 Start the server with:
 ```bash
@@ -12,37 +13,3 @@ uv run app.py --port 3002
 
 The server will run on `localhost:3002`.
 
-## API Endpoints
-
-### POST /opinion-response
-Process text segments to extract arguments.
-
-Request body:
-```json
-{
-    "opinionId": "string",
-    "segments": ["text1", "text2", ...]
-}
-```
-
-### POST /summaries
-Save segment summaries.
-
-Request body:
-```json
-[
-    {
-        "segment": "text1",
-        "summary": "summary1"
-    },
-    ...
-]
-```
-
-### GET /next-data
-Retrieve the next data point from the input JSONL file.
-
-## Data Storage
-
-- Summaries are stored in `summaries.jsonl`
-- Input data should be in `data.jsonl` 
