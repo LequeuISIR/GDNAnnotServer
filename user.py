@@ -2,21 +2,22 @@ import os
 from pathlib import Path
 import pickle
 import json
-from const import NUM_ANNOTATIONS_BEFORE_SHARED
+from const import NUM_ANNOTATIONS_BEFORE_SHARED, EXAMPLES
 import time
 from datetime import datetime
 from filelock import FileLock
 import tempfile
 
 class User :
-    def __init__(self, token):
+    def __init__(self, token, override_already_existing = False):
         """
         Token will be provided by the company
         """
 
-        if self.token_already_exist(token) :
-            # this token is already used by another annotator
-            return ValueError
+        if not override_already_existing :
+            if self.token_already_exist(token) :
+                # this token is already used by another annotator
+                raise ValueError
         
         # else create the user
         self.token = token
@@ -34,8 +35,9 @@ class User :
 
         pass
     def create_user(self) :
-        os.makedirs(f"./annotators/{self.token}/")
+        os.makedirs(f"./annotators/{self.token}/", exist_ok=True)
         open(f"./annotators/{self.token}/annotations.jsonl", 'a').close()
+        open(f"./annotators/{self.token}/examples_annotations.jsonl", 'a').close()
         open(f"./annotators/{self.token}/reports.jsonl", 'a').close()
 
         # self.current_batch = None # current batch index
@@ -45,6 +47,7 @@ class User :
         self.num_shared_batches = 0
         self.start_annotation_time = None
         self.last_used_llm = None
+        self.passed_tutorials = {key: False for key, _ in EXAMPLES.items()}
         self.save_user()
 
 
@@ -71,6 +74,7 @@ class User :
                 with open(user_file, "rb") as f:
                     return pickle.load(f)
             except Exception:
+                
                 raise ValueError
     
     def can_be_second_annotator(self) :
@@ -82,6 +86,21 @@ class User :
         self.start_annotation_time = time.time()
         self.save_user()
 
+    def add_done_example(self, id) :
+        self.passed_tutorials[id] = True
+        self.save_user()
+
+    def get_next_examples(self) :
+        "returns an id if an example was not done, else return none"
+
+        for exampleid, done in self.passed_tutorials.items() :
+            if not done:
+                print("nex example!!", exampleid) 
+                self.start_annotation_time = time.time()
+                print(self.start_annotation_time)
+                self.save_user()
+                return exampleid
+        return None
 
     def save_last_llm(self, model) :
         self.last_used_llm = model
@@ -96,6 +115,18 @@ class User :
 
     def save_annotation(self, data) :
         file_path = f"./annotators/{self.token}/annotations.jsonl"
+        data["time"] = time.time() - self.start_annotation_time
+        data["date"] = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+
+        self.write_jsonl(data, file_path)
+        self.done_annotations.append(self.current_annotation)
+        self.current_annotation = None
+        self.save_user()
+       
+    def save_example_annotation(self, data) :
+        print(self.start_annotation_time)
+        print(time.time())
+        file_path = f"./annotators/{self.token}/examples_annotations.jsonl"
         data["time"] = time.time() - self.start_annotation_time
         data["date"] = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 

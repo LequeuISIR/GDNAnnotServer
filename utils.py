@@ -67,6 +67,8 @@ def load_admin_opinion_results(path: str = ALL_ANNOTATIONS_OUTPUT_FILE):
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
             if line.strip():  # avoid empty lines
+                dict = json.loads(line)
+                del dict
                 results.append(json.loads(line))
     return results
 

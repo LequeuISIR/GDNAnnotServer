@@ -7,7 +7,7 @@ from groqLLM import GroqLLM
 from user import User
 from utils import process_segments, extract_argument, get_token, load_admin_opinion_results, token_is_admin
 from data import GDNData
-from const import REPORT_FR_TO_EN, ALL_MODELS
+from const import REPORT_FR_TO_EN, ALL_MODELS, EXAMPLES
 import os
 
 parser = argparse.ArgumentParser()
@@ -67,6 +67,7 @@ CORS(
         r"/*": {
             "origins": [
                 "http://localhost:3000",
+                "http://localhost:3001",
                 "https://gdnannotation.isir.upmc.fr:3000"
             ]
         }
@@ -137,9 +138,19 @@ def get_next():
     user: User = User.load_user(token)
     app.logger.info(f"Fetching next data for user {token}, current={user.current_annotation}")
 
+    example_to_do = user.get_next_examples()
+    if example_to_do :
+        data_point = EXAMPLES[example_to_do]
+        app.logger.info(f"sending example {example_to_do}")
+        app.logger.info(data_point)
+        return jsonify(data_point)
+    
+    
     if user.current_annotation:
         data_point = all_data.get_data_from_id(user.current_annotation)
         app.logger.debug(f"User {token} resumes annotation {user.current_annotation}")
+        return jsonify(data_point)
+    
     else:
         try:
             data_point = all_data.next_data(user)
@@ -262,14 +273,28 @@ def get_user_info():
         "done_annotations": done_annotations
     })
 
+
+def handle_example_summaries(data, token = None) :
+    app.logger.info("Received an introduction example")
+    if token is None:
+         return jsonify({'message': 'Example summaries without token'})
+
+    if data["opinion"]["opinionId"] in EXAMPLES.keys() :
+        user: User = User.load_user(token)
+        user.add_done_example(data["opinion"]["opinionId"])
+        user.save_example_annotation(data)
+        return jsonify({'message': 'Summaries saved successfully'})
+
+
+
+
 @app.route('/summaries', methods=['POST'])
 def save_summaries():
     data = request.json
     token = get_token(request)
 
     if "Example" in str(data["opinion"]["opinionId"]) :
-        app.logger.info("Skipping introductionExample summary save")
-        return jsonify({'message': 'Summaries saved successfully'})
+        return handle_example_summaries(data, token)
     
     if token is None: 
         return jsonify({'error': 'No token found.'}), 400
@@ -285,6 +310,7 @@ def save_summaries():
     app.logger.info(f"User {token} saved summaries for opinion {data['opinion']['opinionId']} using {used_llm}")
 
     return jsonify({'message': 'Summaries saved successfully'})
+
 
 @app.route('/check-token', methods=['POST'])
 def check_token():
@@ -331,7 +357,7 @@ def get_all_annotations():
     if token is None: 
         return jsonify({'error': 'No token found.'}), 400
     if not token_is_admin(token):
-        return jsonify({'error': 'Token is not admin.'}), 400
+        return jsonify({'error': f'Token {token} is not admin.'}), 400
 
     try:
         data = load_admin_opinion_results()
@@ -341,8 +367,9 @@ def get_all_annotations():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 if __name__ == '__main__':
     from waitress import serve
-    serve(app, host='127.0.0.1', port=args.port)
+    # serve(app, host='127.0.0.1', port=args.port)
 
-    #app.run(host='127.0.0.1', port=3002, debug=True)
+    app.run(host='127.0.0.1', port=3002, debug=True)
