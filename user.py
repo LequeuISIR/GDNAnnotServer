@@ -131,7 +131,6 @@ class User :
         data["date"] = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
         self.write_jsonl(data, file_path)
-        self.done_annotations.append(self.current_annotation)
         self.current_annotation = None
         self.save_user()
        

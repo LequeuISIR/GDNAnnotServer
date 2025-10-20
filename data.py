@@ -118,6 +118,8 @@ class GDNData :
 
 
     def get_data_from_id(self, opinionId) :
+        print("problem opinion:", opinionId)
+        print(self.data[self.data["opinionId"] == opinionId])
         line = self.data[self.data["opinionId"] == opinionId].iloc[0][["opinionId", "text", "authorName", "len"]]
         line = line.to_dict()
         self.data.loc[self.data["opinionId"] == line["opinionId"], "is_being_annotated"] = True

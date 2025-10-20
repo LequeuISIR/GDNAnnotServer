@@ -8,7 +8,7 @@ ANNOTATORS_DIR = Path("./annotators/")
 ALL_ANNOTATIONS_OUTPUT_FILE = Path("./annotators/all_annotations.jsonl")
 ALL_REPORTS_OUTPUT_FILE = Path("./annotators/all_reports.jsonl")
 
-NUM_ANNOTATIONS_BEFORE_SHARED = 8
+NUM_ANNOTATIONS_BEFORE_SHARED = 5
 
 REPORT_FR_TO_EN = {
     "discours de haine": "hate speech",
@@ -50,3 +50,24 @@ EXAMPLES = {
     }
 }
 
+
+RESULTS_EXAMPLES = {
+    "introductionExample1" : {
+        "num_argumentative_units": 4,
+        "num_premises": 4,
+        "num_claims": 1,
+        "num_solutions": 3 
+    },
+    "introductionExample2" : {
+        "num_argumentative_units": 1,
+        "num_premises": 0,
+        "num_claims": 1,
+        "num_solutions": 0 
+    },
+    "introductionExample3" : {
+        "num_argumentative_units": 5,
+        "num_premises": 0,
+        "num_claims": 0,
+        "num_solutions": 5 
+    }
+}

@@ -5,7 +5,7 @@ import argparse
 import random
 from groqLLM import GroqLLM
 from user import User
-from utils import process_segments, extract_argument, get_token, load_admin_opinion_results, token_is_admin
+from utils import process_segments, extract_argument, get_token, load_admin_opinion_results, token_is_admin, is_valid_example
 from data import GDNData
 from const import REPORT_FR_TO_EN, ALL_MODELS, EXAMPLES
 import os
@@ -258,12 +258,18 @@ def get_user_info():
     
     user: User = User.load_user(token)
 
+    print(user.done_annotations)
+
     done_annotations = {
         annotation_id: all_data.get_data_from_id(annotation_id)["text"]
         for annotation_id in user.done_annotations
     }
-    current_annotation_text = all_data.get_data_from_id(user.current_annotation)["text"]
 
+    if user.current_annotation :
+        current_annotation_text = all_data.get_data_from_id(user.current_annotation)["text"]
+    else :
+        current_annotation_text = None
+    
     app.logger.info(f"User {token} requested user-info (done={len(done_annotations)})")
 
     return jsonify({
@@ -274,16 +280,39 @@ def get_user_info():
     })
 
 
+{"opinion": {"authorName": "DEMOCRATIE_ET_CITOYENNETE", 
+            "len": 386, "opinionId": 64729, 
+            "text": "J'ai personnellement trop..."}, 
+"results": [{"LLMtext": "Lorsque l\u2019on voyage ou s\u2019expatrie, il est essentiel d\u2019adopter un comportement respectueux envers la population et la culture locale, tout comme on attend que les \u00e9trangers fassent preuve du m\u00eame respect en retour.", 
+            "color": "orange", 
+            "segments": {"64729-orange-#1976D2-1": {"color": "orange", "end": 386, "hex": "#1976D2", "segmentId": "64729-orange-#1976D2-1", "start": 348, "text": "J'entends que l'inverse soit respect\u00e9.", "type": "premise"}, 
+                        "64729-orange-#1976D2-2": {"color": "orange", "end": 223, "hex": "#1976D2", "segmentId": "64729-orange-#1976D2-2", "start": 144, "text": "que mon comportement \u00e0 l'\u00e9tranger s'apparente \u00e0 celui d'un invit\u00e9 chez un h\u00f4te.", "type": "premise"}, 
+                        "64729-orange-#1976D2-3": {"color": "orange", "end": 301, "hex": "#1976D2", "segmentId": "64729-orange-#1976D2-3", "start": 224, "text": "C'est d'autant plus sensible lorsque j'imagine m'expatrier dans un autre pays", "type": "premise"}, 
+                        "64729-orange-#D32F2F-2": {"color": "orange", "end": 143, "hex": "#D32F2F", "segmentId": "64729-orange-#D32F2F-2", "start": 0, "text": "J'ai personnellement trop de respect pour les habitants, l'histoire, la culture, voire les traditions d'autres pays visit\u00e9s lors de mes voyages", "type": "claim"}, 
+                        "64729-orange-#D32F2F-3": {"color": "orange", "end": 346, "hex": "#D32F2F", "segmentId": "64729-orange-#D32F2F-3", "start": 303, "text": "ce qu'il m'arrive d'envisager s\u00e9rieusement.", "type": "claim"}}, 
+            "text": "Lorsque l\u2019on voyage ou s\u2019expatrie, je consid\u00e8re qu'il est essentiel d\u2019adopter un comportement respectueux envers la population et la culture locale. De la m\u00eame mani\u00e8re, j'attends que les \u00e9trangers pr\u00e9sents en France fassent preuve du m\u00eame respect en retour."}], 
+            "llm": "gpt-4.1", 
+            "time": 265.41402673721313, 
+            "date": "2025-09-02 11:15:51", 
+            "annotator": "Mathias"}
+
 def handle_example_summaries(data, token = None) :
     app.logger.info("Received an introduction example")
+
     if token is None:
          return jsonify({'message': 'Example summaries without token'})
 
     if data["opinion"]["opinionId"] in EXAMPLES.keys() :
-        user: User = User.load_user(token)
-        user.add_done_example(data["opinion"]["opinionId"])
-        user.save_example_annotation(data)
-        return jsonify({'message': 'Summaries saved successfully'})
+        if is_valid_example(data) :
+            user: User = User.load_user(token)
+            user.add_done_example(data["opinion"]["opinionId"])
+            user.save_example_annotation(data)
+            return jsonify({'message': 'Summaries saved successfully'})
+        else :
+            return jsonify({"error": "segmentation was not done properly"}), 400
+
+
+    return jsonify({'message': "Shouldn't happen if front end is done well"})
 
 
 
@@ -295,19 +324,19 @@ def save_summaries():
 
     if "Example" in str(data["opinion"]["opinionId"]) :
         return handle_example_summaries(data, token)
-    
-    if token is None: 
-        return jsonify({'error': 'No token found.'}), 400
-    
-    user: User = User.load_user(token)
-    used_llm = user.last_used_llm
+    else :
 
-    data["llm"] = used_llm
+        if token is None: 
+            return jsonify({'error': 'No token found.'}), 400
+        
+        user: User = User.load_user(token)
+        used_llm = user.last_used_llm
 
+        data["llm"] = used_llm
 
-    all_data.add_finished_annotation(data)
-    user.save_annotation(data)
-    app.logger.info(f"User {token} saved summaries for opinion {data['opinion']['opinionId']} using {used_llm}")
+        all_data.add_finished_annotation(data)
+        user.save_annotation(data)
+        app.logger.info(f"User {token} saved summaries for opinion {data['opinion']['opinionId']} using {used_llm}")
 
     return jsonify({'message': 'Summaries saved successfully'})
 
@@ -315,9 +344,20 @@ def save_summaries():
 @app.route('/check-token', methods=['POST'])
 def check_token():
     data = request.json
-    with open("./annotators/all_tokens.txt") as f:
-        tokens = [line.rstrip() for line in f]
+    with open("./annotators/allowed_tokens.txt") as f:
+        allowed_tokens = [line.rstrip() for line in f]
+    with open("./annotators/admin_tokens.txt") as f:
+        admin_tokens = [line.rstrip() for line in f]
+        allowed_tokens += admin_tokens
+        
     token = data.get("token")
+
+    if token is None: 
+        return jsonify({'error': 'No token found.'}), 400
+    
+    if token not in allowed_tokens:
+        print(f"not allowed token: {token}")
+        return jsonify({'error': f'token={token} is not allowed.'}), 400
 
     app.logger.info(f"User connecting with token={token}")
     
@@ -356,6 +396,7 @@ def get_all_annotations():
 
     if token is None: 
         return jsonify({'error': 'No token found.'}), 400
+
     if not token_is_admin(token):
         return jsonify({'error': f'Token {token} is not admin.'}), 400
 

@@ -1,7 +1,7 @@
 import json
 import datetime
 from collections import defaultdict
-from const import ALL_ANNOTATIONS_OUTPUT_FILE
+from const import ALL_ANNOTATIONS_OUTPUT_FILE, RESULTS_EXAMPLES
 
 def get_new_batch() :
     NotImplemented
@@ -80,3 +80,24 @@ def token_is_admin(token):
         return True
 
     return False
+
+def is_valid_example(example_output) :
+    expected = RESULTS_EXAMPLES[example_output["opinion"]["opinionId"]]
+    num_argumentative_units = len(example_output["results"])
+    all_segments = [res["segments"] for res in example_output["results"]]
+    num_premises= 0
+    num_claims=0
+    num_solutions=0
+    for segments in all_segments :
+        num_claims += len([seg for seg in segments.values() if seg["type"] == "claim"])
+        num_premises += len([seg for seg in segments.values() if seg["type"] == "premise"])
+        num_solutions += len([seg for seg in segments.values() if seg["type"] == "solution"])
+
+    print(num_argumentative_units, num_claims, num_premises, num_solutions, expected)
+    if ((expected["num_argumentative_units"] != num_argumentative_units) 
+        or (expected["num_claims"] != num_claims) 
+        or (expected["num_premises"] != num_premises) 
+        or (expected["num_solutions"] != num_solutions)) :
+        return False
+
+    return True
