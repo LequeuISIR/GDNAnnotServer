@@ -261,12 +261,12 @@ def get_user_info():
     print(user.done_annotations)
 
     done_annotations = {}
-
-    for annotation_id in user.done_annotations :
-        data = all_data.get_data_info_from_id(annotation_id)
+    all_annot = user.read_done_annotations()
+    
+    for annotation_id, value in all_annot.items() :
         done_annotations[annotation_id] = {
-            "text": data["text"],
-            "date": data["date"]
+            "text": value["text"],
+            "date": value["date"]
         }
 
     if user.current_annotation :

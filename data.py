@@ -131,7 +131,6 @@ class GDNData :
         print(self.data[self.data["opinionId"] == opinionId])
         line = self.data[self.data["opinionId"] == opinionId].iloc[0][["opinionId", "text", "authorName", "len", "date"]]
         line = line.to_dict()
-        self.data.loc[self.data["opinionId"] == line["opinionId"], "is_being_annotated"] = False
         return line
     
     def get_used_llm(self, opinionId) :

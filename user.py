@@ -135,6 +135,28 @@ class User :
         self.save_user()
        
     
+    def read_done_annotations(self) :
+        file_path = f"./annotators/{self.token}/annotations.jsonl"
+        lock = FileLock(file_path + ".lock")
+        all_data = {}
+        with lock:
+            with open(file_path, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        data = json.loads(line)
+                        all_data[data["opinion"]["opinionId"]] = {
+                            "text": data["opinion"]["text"],
+                            "date": data["date"]
+                        }
+                    except json.JSONDecodeError:
+                        print(f"Skipping invalid JSON in {file_path}")
+                        pass
+        return all_data
+        
+
     def write_jsonl(self, data, file_path) :
         lock = FileLock(file_path + ".lock")
         with lock:
