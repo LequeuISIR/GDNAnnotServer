@@ -261,6 +261,15 @@ def get_user_info():
     print(user.done_annotations)
 
     done_annotations = {
+        annotation_id: {
+            "text": data["text"],
+            "date": data["date"]
+        }
+        for annotation_id in user.done_annotations 
+        for data in all_data.get_data_from_id(annotation_id)
+    }
+
+    done_annotations = {
         annotation_id: all_data.get_data_from_id(annotation_id)["text"]
         for annotation_id in user.done_annotations
     }
