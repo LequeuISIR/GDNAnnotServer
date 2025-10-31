@@ -109,7 +109,7 @@ class User :
     def report_data(self, data) :
         file_path = f"./annotators/{self.token}/reports.jsonl"
         self.write_jsonl(data, file_path)
-        self.done_annotations.append(self.current_annotation)
+        # self.done_annotations.append(self.current_annotation)
         self.current_annotation = None
         self.save_user()            
 

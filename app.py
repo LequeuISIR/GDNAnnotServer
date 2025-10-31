@@ -411,6 +411,6 @@ def get_all_annotations():
 
 if __name__ == '__main__':
     from waitress import serve
-    # serve(app, host='127.0.0.1', port=args.port)
+    serve(app, host='127.0.0.1', port=args.port)
 
-    app.run(host='127.0.0.1', port=3002, debug=True)
+    # app.run(host='127.0.0.1', port=3002, debug=True)
