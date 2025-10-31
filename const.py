@@ -14,6 +14,7 @@ REPORT_FR_TO_EN = {
     "discours de haine": "hate speech",
     "incomprehensible": "incomprehensible",
     "trop d'unités argumentatives": "too long",
+    "informations personnelles": "not anonymous",
     "autre": "other"
 }
 
